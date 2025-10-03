@@ -19,10 +19,9 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-gray-800 border-b border-gray-700 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className="navbar">
+      <div className="max-w-7xl mx-auto container-padding">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0">
               <h1 className="text-2xl font-bold text-white">
@@ -31,7 +30,6 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Search Bar - Hidden on mobile */}
           <div className="hidden md:block flex-1 max-w-lg mx-8">
             <form onSubmit={handleSearch} className="relative">
               <input
@@ -39,7 +37,7 @@ export default function Navbar() {
                 placeholder="Search products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full button-padding bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <button
                 type="submit"
@@ -52,9 +50,7 @@ export default function Navbar() {
             </form>
           </div>
 
-          {/* Right side icons */}
-          <div className="flex items-center space-x-4">
-            {/* Cart Icon */}
+          <div className="flex items-center space-x">
             <Link
               href="/cart"
               className="text-gray-300 hover:text-white p-2 rounded-lg hover:bg-gray-700 transition-colors relative"
@@ -69,15 +65,13 @@ export default function Navbar() {
               )}
             </Link>
 
-            {/* Sign In Button */}
             <Link
               href="/login"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+              className="bg-blue-600 hover:bg-blue-700 text-white button-padding rounded-lg transition-colors font-medium"
             >
               Sign In
             </Link>
 
-            {/* Mobile menu button */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="md:hidden text-gray-300 hover:text-white p-2 rounded-lg hover:bg-gray-700 transition-colors"
@@ -89,16 +83,15 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Mobile Search - Only show when menu is open */}
         {isMenuOpen && (
-          <div className="md:hidden pb-4">
+          <div className="md:hidden margin-bottom">
             <form onSubmit={handleSearch} className="relative">
               <input
                 type="text"
                 placeholder="Search products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full button-padding bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <button
                 type="submit"

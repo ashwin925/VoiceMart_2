@@ -193,7 +193,7 @@ export default function Home() {
         <section className="bg-gradient-to-br from-gray-800 to-gray-900 py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-              Welcome to <span className="text-blue-400">VoiceMart</span>
+              Welcome to <span className="text-blue-400 title">VoiceMart</span>
             </h1>
             <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
               Experience the future of accessible shopping. Control everything with your voice - 
