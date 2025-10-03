@@ -2,7 +2,7 @@
 import { useRef, useEffect } from 'react';
 import ProductCard from './ProductCard';
 
-export default function InfiniteScrollCards({ category, products, onProductClick }) {
+export default function InfiniteScrollCards({ category, products, onProductClick, focusedProduct }) {
   const scrollContainerRef = useRef(null);
 
   useEffect(() => {
@@ -10,13 +10,12 @@ export default function InfiniteScrollCards({ category, products, onProductClick
     if (!scrollContainer) return;
 
     let animationFrameId;
-    const speed = 0.5; // Adjust speed here
+    const speed = 0.5;
 
     const scroll = () => {
       if (scrollContainer) {
         scrollContainer.scrollLeft += speed;
         
-        // Reset scroll position when reaching the end
         if (scrollContainer.scrollLeft >= (scrollContainer.scrollWidth - scrollContainer.clientWidth) / 2) {
           scrollContainer.scrollLeft = 0;
         }
@@ -62,17 +61,18 @@ export default function InfiniteScrollCards({ category, products, onProductClick
           {[...products, ...products].map((product, index) => (
             <div
               key={`${product._id || product.id}-${index}`}
-              className="flex-shrink-0 w-64" // Fixed width for consistent cards
+              className="flex-shrink-0 w-64"
             >
               <ProductCard 
                 product={product} 
                 onProductClick={onProductClick}
+                isFocused={focusedProduct === product._id}
               />
             </div>
           ))}
         </div>
 
-        {/* Gradient overlays for better visual effect */}
+        {/* Gradient overlays */}
         <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-gray-900 to-transparent pointer-events-none" />
         <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-gray-900 to-transparent pointer-events-none" />
       </div>

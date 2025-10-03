@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongoose';
-import Category from '@/models/Category';
-import Product from '@/models/Product';
+import Category from '../../models/Category';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 

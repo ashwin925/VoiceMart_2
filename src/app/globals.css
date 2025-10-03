@@ -63,3 +63,33 @@ a:focus-visible {
   box-shadow: 0 0 0 3px #3b82f6, 0 0 0 6px rgba(59, 130, 246, 0.5);
   transition: all 0.3s ease;
 }
+
+/* Voice command focus styles */
+.voice-focus {
+  box-shadow: 0 0 0 3px #3b82f6, 0 0 0 6px rgba(59, 130, 246, 0.5);
+  transition: all 0.3s ease;
+  z-index: 10;
+  position: relative;
+}
+
+/* Smooth scrolling for voice navigation */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Voice feedback animations */
+@keyframes voicePulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+}
+
+.voice-active {
+  animation: voicePulse 2s infinite;
+}

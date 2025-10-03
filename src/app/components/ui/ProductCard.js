@@ -1,9 +1,22 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 
-export default function ProductCard({ product, onProductClick }) {
+export default function ProductCard({ product, onProductClick, isFocused = false }) {
   const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
+  const cardRef = useRef(null);
+
+  useEffect(() => {
+    if (isFocused && cardRef.current) {
+      cardRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'center'
+      });
+      cardRef.current.focus();
+    }
+  }, [isFocused]);
 
   const handleClick = () => {
     if (onProductClick) {
@@ -13,30 +26,54 @@ export default function ProductCard({ product, onProductClick }) {
 
   const handleImageError = () => {
     setImageError(true);
+    setImageLoading(false);
+  };
+
+  const handleImageLoad = () => {
+    setImageLoading(false);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      handleClick();
+    }
   };
 
   return (
     <div 
-      className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700 hover:border-blue-500 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 cursor-pointer group"
+      ref={cardRef}
+      className={`
+        bg-gray-800 rounded-lg overflow-hidden border transition-all duration-300 cursor-pointer group
+        ${isFocused 
+          ? 'border-blue-500 shadow-2xl shadow-blue-500/50 scale-105 voice-focus' 
+          : 'border-gray-700 hover:border-blue-500 hover:shadow-2xl hover:shadow-blue-500/10'
+        }
+      `}
       onClick={handleClick}
+      onKeyPress={handleKeyPress}
+      tabIndex={0}
+      role="button"
+      aria-label={`View details for ${product.name}`}
+      data-product-name={product.name.toLowerCase()}
     >
       {/* Product Image */}
       <div className="relative h-48 bg-gray-700 overflow-hidden">
-        {!imageError ? (
-          <Image
-            src={product.imageUrl}
-            alt={product.name}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={handleImageError}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <svg className="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
+        {imageLoading && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
           </div>
         )}
+        <Image
+          src={imageError ? 'https://via.placeholder.com/400x300/374151/FFFFFF?text=Image+Not+Found' : product.imageUrl}
+          alt={product.name}
+          fill
+          className={`object-cover group-hover:scale-105 transition-transform duration-300 ${
+            imageLoading ? 'opacity-0' : 'opacity-100'
+          }`}
+          onError={handleImageError}
+          onLoad={handleImageLoad}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+        />
       </div>
 
       {/* Product Info */}
@@ -55,7 +92,6 @@ export default function ProductCard({ product, onProductClick }) {
             className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors"
             onClick={(e) => {
               e.stopPropagation();
-              // Add to cart functionality will be implemented later
               console.log('Add to cart:', product.name);
             }}
           >

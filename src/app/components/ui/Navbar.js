@@ -1,14 +1,20 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useCartStore } from '../../../../store/cartStore';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const { getTotalItems } = useCartStore();
+  const [cartItemCount, setCartItemCount] = useState(0);
+
+  useEffect(() => {
+    setCartItemCount(getTotalItems());
+  }, [getTotalItems]);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    // Search functionality will be implemented in later phases
     console.log('Searching for:', searchQuery);
   };
 
@@ -51,16 +57,16 @@ export default function Navbar() {
             {/* Cart Icon */}
             <Link
               href="/cart"
-              className="text-gray-300 hover:text-white p-2 rounded-lg hover:bg-gray-700 transition-colors"
+              className="text-gray-300 hover:text-white p-2 rounded-lg hover:bg-gray-700 transition-colors relative"
             >
-              <div className="relative">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5.5M7 13l2.5 5.5m0 0L17 13m-7.5 5.5V21a1 1 0 001 1h4a1 1 0 001-1v-2.5" />
-                </svg>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5.5M7 13l2.5 5.5m0 0L17 13m-7.5 5.5V21a1 1 0 001 1h4a1 1 0 001-1v-2.5" />
+              </svg>
+              {cartItemCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  0
+                  {cartItemCount}
                 </span>
-              </div>
+              )}
             </Link>
 
             {/* Sign In Button */}
