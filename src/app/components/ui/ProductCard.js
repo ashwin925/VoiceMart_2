@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
@@ -97,40 +98,47 @@ export default function ProductCard({ product, onProductClick, isFocused = false
             // For external hosts (not configured in next.config.js) fall back to a plain <img>.
           }
           {(() => {
-            const src = imageError ? 'https://via.placeholder.com/400x300?text=No+Image' : (product.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image');
+            const rawSrc = imageError ? 'https://via.placeholder.com/400x300?text=No+Image' : (product.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image');
+            const src = rawSrc;
 
+            // Detect special cases where next/image is not appropriate
+            const isDataOrBlob = /^data:|^blob:/i.test(src);
+            const isRelative = /^\.|^\//.test(src);
+            const isBareFilename = /^[^\s\/]+\.[a-z0-9]{2,6}$/i.test(src);
+
+            // Determine if URL is external
             let isExternal = false;
             try {
               const url = new URL(src, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
-              // Treat as external when hostname differs from current origin and protocol is http(s)
               if ((url.protocol === 'http:' || url.protocol === 'https:') && typeof window !== 'undefined') {
                 isExternal = url.hostname !== window.location.hostname;
               }
             } catch (e) {
-              // If URL parsing fails, treat as local
+              // parsing failed => treat as local (data: blob: bare filename)
               isExternal = false;
             }
 
-            if (!isExternal) {
+            const useImg = isDataOrBlob || isRelative || isBareFilename || isExternal;
+
+            if (useImg) {
+              // plain <img> works for data URIs, relative paths, external hosts and bare filenames
               return (
-                <Image
+                <img
                   src={src}
                   alt={product.name}
-                  fill
-                  className={`object-cover transition-transform duration-700 ${isHovered ? 'scale-110' : 'scale-100'} ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
+                  className={`w-full h-full object-cover transition-transform duration-700 ${isHovered ? 'scale-110' : 'scale-100'} ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
                   onError={handleImageError}
                   onLoad={handleImageLoad}
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                 />
               );
             }
 
-            // Fallback for external images (avoids next/image host config errors)
+            // Fallback to next/image for strict same-origin optimized images
             return (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={src}
                 alt={product.name}
+                fill
                 className={`object-cover transition-transform duration-700 ${isHovered ? 'scale-110' : 'scale-100'} ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
                 onError={handleImageError}
                 onLoad={handleImageLoad}

@@ -26,6 +26,20 @@ export default function VoiceAssistant() {
     }
   }, [isActive]);
 
+  // Listen for global voice-driven UI events like opening the cart
+  useEffect(() => {
+    const onOpenCart = () => {
+      try {
+        window.location.href = '/cart';
+      } catch (e) {
+        console.warn('Failed to navigate to cart via voice:', e);
+      }
+    };
+
+    window.addEventListener('voiceOpenCart', onOpenCart);
+    return () => window.removeEventListener('voiceOpenCart', onOpenCart);
+  }, []);
+
   const statusConfig = {
     inactive: {
       color: 'bg-gray-600',

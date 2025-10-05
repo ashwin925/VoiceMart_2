@@ -92,17 +92,26 @@ export async function POST(request) {
     }
 
     // Validate image URL format
-    // Allow absolute URLs, same-origin paths and data URIs. Use URL parsing for full URLs.
-    const isDataUri = typeof imageUrl === 'string' && imageUrl.startsWith('data:');
-    const isRelativeOrLocal = typeof imageUrl === 'string' && (imageUrl.startsWith('/') || imageUrl.startsWith('./'));
+    // Allow data URIs, absolute http(s) URLs, same-origin paths, and bare filenames
+    let finalImageUrl = imageUrl;
+    const isString = typeof imageUrl === 'string';
+    const isDataUri = isString && imageUrl.startsWith('data:');
+    const isRelativeOrLocal = isString && (imageUrl.startsWith('/') || imageUrl.startsWith('./') || imageUrl.startsWith('../'));
+
     if (!isDataUri && !isRelativeOrLocal) {
+      // Try parsing as full URL
       try {
         const parsed = new URL(imageUrl);
         if (!['http:', 'https:'].includes(parsed.protocol)) {
           return NextResponse.json({ success: false, error: 'Please enter a valid image URL' }, { status: 400 });
         }
       } catch (urlError) {
-        return NextResponse.json({ success: false, error: 'Please enter a valid image URL' }, { status: 400 });
+        // If parsing fails, accept bare filenames like 'globe.svg' by treating them as relative
+        if (isString && /^[^\s\/]+\.[a-z0-9]{2,6}$/i.test(imageUrl)) {
+          finalImageUrl = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
+        } else {
+          return NextResponse.json({ success: false, error: 'Please enter a valid image URL' }, { status: 400 });
+        }
       }
     }
 
@@ -118,7 +127,7 @@ export async function POST(request) {
     const product = await Product.create({
       name: name.trim(),
       category,
-      imageUrl: imageUrl.trim(),
+      imageUrl: (finalImageUrl || '').trim(),
       shortDescription: shortDescription.trim(),
       mrp: parseFloat(mrp),
       discount: parseFloat(discount),

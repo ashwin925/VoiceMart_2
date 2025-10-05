@@ -4,7 +4,6 @@ import Navbar from './components/ui/Navbar';
 import Footer from './components/ui/Footer';
 import InfiniteScrollCards from './components/ui/InfiniteScrollCards';
 import ProductModal from './components/ui/ProductModal';
-import VoiceAssistant from './components/ui/VoiceAssistant';
 import { categoriesAPI, productsAPI } from '@/lib/api';
 import { useCartStore } from '../../store/cartStore';
 
@@ -377,7 +376,6 @@ export default function Home() {
       )}
 
       {/* Voice Assistant */}
-      <VoiceAssistant />
     </div>
   );
 }

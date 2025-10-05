@@ -15,7 +15,26 @@ const productSchema = new mongoose.Schema({
   imageUrl: {
     type: String,
     required: [true, 'Image URL is required'],
-    match: [/^https?:\/\/.+\..+/, 'Please enter a valid image URL']
+    validate: {
+      validator: function(v) {
+        if (!v || typeof v !== 'string') return false;
+        const s = v.trim();
+        // allow data URIs and blob URLs
+        if (s.startsWith('data:') || s.startsWith('blob:')) return true;
+        // allow relative/local paths
+        if (s.startsWith('/') || s.startsWith('./') || s.startsWith('../')) return true;
+        // allow bare filenames like 'globe.svg'
+        if (/^[^\s\/]+\.[a-z0-9]{2,6}$/i.test(s)) return true;
+        // allow http/https
+        try {
+          const u = new URL(s);
+          return ['http:', 'https:'].includes(u.protocol);
+        } catch (e) {
+          return false;
+        }
+      },
+      message: 'Please enter a valid image URL or upload a file'
+    }
   },
   shortDescription: {
     type: String,

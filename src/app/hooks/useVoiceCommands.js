@@ -10,6 +10,7 @@ export const useVoiceCommands = () => {
   const [permissionGranted, setPermissionGranted] = useState(false);
   
   const recognitionRef = useRef(null);
+  const noSpeechCountRef = useRef(0);
   const commandsHistoryRef = useRef([]);
   const finalTranscriptRef = useRef('');
   
@@ -28,7 +29,7 @@ export const useVoiceCommands = () => {
     activation: ['listen now', 'start listening', 'wake up', 'hey voicemart', 'activate', 'hello voicemart'],
     deactivation: ['stop listening', 'sleep', 'go to sleep', 'stop', 'deactivate', 'goodbye'],
     navigation: ['scroll up', 'scroll down', 'scroll to top', 'scroll to bottom', 'go up', 'go down'],
-    actions: ['add to cart', 'buy now', 'exit', 'close', 'go back', 'back'],
+  actions: ['add to cart', 'buy now', 'open cart', 'exit', 'close', 'go back', 'back'],
     selection: ['select', 'choose', 'focus on', 'show me', 'open'],
     help: ['help', 'what can i say', 'commands', 'show commands'],
   }), []);
@@ -195,6 +196,12 @@ export const useVoiceCommands = () => {
       if (command.includes('add to cart')) {
         handleAddToCart();
         console.log('🛒 Add to cart triggered');
+      } else if (command.includes('open cart')) {
+        // dispatch an event that UI components can listen to
+        const ev = new CustomEvent('voiceOpenCart');
+        window.dispatchEvent(ev);
+        speakFeedback('Opening your cart');
+        console.log('🧾 Open cart triggered');
       } else if (command.includes('buy now')) {
         handleBuyNow();
         console.log('💰 Buy now triggered');
@@ -278,28 +285,39 @@ export const useVoiceCommands = () => {
 
     recognition.onerror = (event) => {
       console.error('❌ Speech recognition error:', event.error);
-      
       switch (event.error) {
         case 'not-allowed':
         case 'permission-denied':
           setError('Microphone permission denied. Please allow microphone access in your browser settings.');
           setPermissionGranted(false);
+          // stop listening
+          setIsListening(false);
+          setStatus('error');
           break;
         case 'network':
           setError('Network error occurred. Please check your internet connection.');
+          setStatus('error');
+          setIsListening(false);
           break;
         case 'no-speech':
+          // increment counter; after multiple no-speech events, stop to avoid loop
+          noSpeechCountRef.current = (noSpeechCountRef.current || 0) + 1;
+          console.warn('⚠️ no-speech count:', noSpeechCountRef.current);
+          if (noSpeechCountRef.current >= 3) {
+            setError('No speech detected. Stopping voice recognition. Please try again.');
+            setStatus('inactive');
+            setIsListening(false);
+          }
           break;
         case 'audio-capture':
           setError('No microphone found. Please check your microphone connection.');
+          setStatus('error');
+          setIsListening(false);
           break;
         default:
           setError(`Voice recognition error: ${event.error}. Please try again.`);
-      }
-      
-      if (event.error !== 'no-speech') {
-        setStatus('error');
-        setIsListening(false);
+          setStatus('error');
+          setIsListening(false);
       }
     };
 
@@ -307,16 +325,17 @@ export const useVoiceCommands = () => {
       console.log('🔚 Speech recognition ended');
       // If intentionally listening, try to restart but with a small backoff to avoid rapid restarts
       if (isListeningRef.current && permissionGranted) {
+        const backoff = Math.min(1000 * (noSpeechCountRef.current || 1), 5000);
         setTimeout(() => {
           try {
             recognition.start();
-            console.log('🔄 Restarting speech recognition (backoff)');
+            console.log('🔄 Restarting speech recognition (backoff)', backoff);
           } catch (error) {
             console.error('❌ Error restarting recognition:', error);
             setStatus('error');
             setIsListening(false);
           }
-        }, 300);
+        }, backoff);
       } else {
         setStatus('inactive');
       }
@@ -332,8 +351,13 @@ export const useVoiceCommands = () => {
       if (!granted) return;
     }
 
+    if (!recognitionRef.current) {
+      recognitionRef.current = initializeRecognition();
+    }
+
     if (recognitionRef.current) {
       try {
+        noSpeechCountRef.current = 0;
         recognitionRef.current.start();
         setIsListening(true);
         console.log('🎤 Starting voice recognition');

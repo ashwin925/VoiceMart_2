@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @next/next/no-img-element */
 import { useState, useEffect } from 'react';
 import { categoriesAPI, productsAPI } from '@/lib/api';
 
@@ -22,7 +23,7 @@ export default function ProductForm({
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState('');
-  const [imageSource, setImageSource] = useState('url'); // 'url' or 'upload'
+  const [imagePreviewError, setImagePreviewError] = useState(false);
 
   useEffect(() => {
     fetchCategories();
@@ -61,8 +62,10 @@ export default function ProductForm({
       const reader = new FileReader();
       reader.onload = (e) => setImagePreview(e.target.result);
       reader.readAsDataURL(file);
+      setImagePreviewError(false);
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
+      if (name === 'imageUrl') setImagePreviewError(false);
       
       // Auto-calculate price if MRP and discount are provided
       if ((name === 'mrp' || name === 'discount') && formData.mrp && formData.discount) {
@@ -96,13 +99,9 @@ export default function ProductForm({
       newErrors.category = 'Category is required';
     }
 
-    if (imageSource === 'url' && !formData.imageUrl.trim()) {
-      newErrors.imageUrl = 'Image URL is required';
-    } else if (imageSource === 'url' && !isValidUrl(formData.imageUrl)) {
-      newErrors.imageUrl = 'Please enter a valid image URL';
-    }
-
-    if (imageSource === 'upload' && !formData.imageFile) {
+    // For new products, require an uploaded image file. For edits, leaving
+    // the file empty will keep the existing image (pre-filled in imagePreview).
+    if (!product && !formData.imageFile) {
       newErrors.imageFile = 'Please select an image file';
     }
 
@@ -128,14 +127,7 @@ export default function ProductForm({
     return Object.keys(newErrors).length === 0;
   };
 
-  const isValidUrl = (string) => {
-    try {
-      new URL(string);
-      return true;
-    } catch (_) {
-      return false;
-    }
-  };
+  // (Removed URL validation helper — uploads only.)
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -143,6 +135,31 @@ export default function ProductForm({
 
     setLoading(true);
     try {
+      // If a file was selected but the preview hasn't finished loading yet,
+      // convert the file to a data URL before sending.
+      const readFileAsDataURL = (file) => new Promise((resolve, reject) => {
+        try {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(new Error('Failed to read file'));
+          reader.readAsDataURL(file);
+        } catch (err) {
+          reject(err);
+        }
+      });
+
+      // Always convert the selected file to a data URL to avoid timing/race issues
+      let finalImagePreview = imagePreview;
+      if (formData.imageFile) {
+        try {
+          finalImagePreview = await readFileAsDataURL(formData.imageFile);
+          // update preview state so UI shows it after submit if needed
+          setImagePreview(finalImagePreview);
+        } catch (readErr) {
+          console.error('Failed to read image file before submit:', readErr);
+        }
+      }
+
       const productData = {
         name: formData.name,
         category: formData.category,
@@ -150,8 +167,30 @@ export default function ProductForm({
         mrp: parseFloat(formData.mrp),
         discount: parseFloat(formData.discount),
         price: parseFloat(formData.price),
-        imageUrl: formData.imageUrl
+        // Use the uploaded preview if present; for edits this will be the
+        // existing image (imagePreview was initialized from product.imageUrl).
+        imageUrl: finalImagePreview || formData.imageUrl
       };
+
+      // Debug: ensure imageUrl is set and looks like a data URI when uploading
+      try {
+        console.debug('Product submit imageUrl type:', typeof productData.imageUrl);
+        if (productData.imageUrl && typeof productData.imageUrl === 'string') {
+          console.debug('imageUrl length:', productData.imageUrl.length);
+          console.debug('imageUrl startsWith data:', productData.imageUrl.startsWith('data:'));
+        }
+      } catch (dbgErr) {
+        // ignore debug errors
+      }
+
+      if (!productData.imageUrl || (typeof productData.imageUrl === 'string' && productData.imageUrl.trim() === '')) {
+        setErrors({ submit: 'No image data available. Please select an image file and wait for preview to appear.' });
+        setLoading(false);
+        return;
+      }
+
+      // Trim and ensure string type
+      if (typeof productData.imageUrl === 'string') productData.imageUrl = productData.imageUrl.trim();
 
       if (product) {
         await productsAPI.update(product._id, productData);
@@ -222,72 +261,28 @@ export default function ProductForm({
           )}
         </div>
 
-        {/* Image Source Selection */}
+        {/* Image Upload (upload-only) */}
         <div>
           <label className="block text-sm font-medium text-gray-300 margin-bottom-sm">
-            Image Source
+            Product Image {product ? <span className="text-sm text-gray-400">(leave empty to keep existing)</span> : '*'}
           </label>
-          <div className="flex space-x-4 margin-bottom">
-            <button
-              type="button"
-              onClick={() => setImageSource('url')}
-              className={`flex-1 button-padding rounded-lg font-medium transition-all ${
-                imageSource === 'url'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+          <div>
+            <input
+              type="file"
+              name="imageFile"
+              accept="image/*"
+              onChange={handleChange}
+              className={`w-full button-padding bg-gray-700 border rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-600 file:text-white hover:file:bg-blue-700 ${
+                errors.imageFile ? 'border-red-500' : 'border-gray-600'
               }`}
-            >
-              🌐 Image URL
-            </button>
-            <button
-              type="button"
-              onClick={() => setImageSource('upload')}
-              className={`flex-1 button-padding rounded-lg font-medium transition-all ${
-                imageSource === 'upload'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
-            >
-              📁 Upload Image
-            </button>
+            />
+            {errors.imageFile && (
+              <p className="margin-top-sm text-sm text-red-500">{errors.imageFile}</p>
+            )}
+            {product && !imagePreview && (
+              <p className="text-sm text-gray-400 margin-top-sm">No image selected — the existing image will be kept.</p>
+            )}
           </div>
-
-          {/* Image URL Input */}
-          {imageSource === 'url' && (
-            <div>
-              <input
-                type="url"
-                name="imageUrl"
-                value={formData.imageUrl}
-                onChange={handleChange}
-                className={`w-full button-padding bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.imageUrl ? 'border-red-500' : 'border-gray-600'
-                }`}
-                placeholder="https://example.com/image.jpg"
-              />
-              {errors.imageUrl && (
-                <p className="margin-top-sm text-sm text-red-500">{errors.imageUrl}</p>
-              )}
-            </div>
-          )}
-
-          {/* Image Upload Input */}
-          {imageSource === 'upload' && (
-            <div>
-              <input
-                type="file"
-                name="imageFile"
-                accept="image/*"
-                onChange={handleChange}
-                className={`w-full button-padding bg-gray-700 border rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-600 file:text-white hover:file:bg-blue-700 ${
-                  errors.imageFile ? 'border-red-500' : 'border-gray-600'
-                }`}
-              />
-              {errors.imageFile && (
-                <p className="margin-top-sm text-sm text-red-500">{errors.imageFile}</p>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Image Preview */}
@@ -299,14 +294,14 @@ export default function ProductForm({
                 src={imagePreview || formData.imageUrl}
                 alt="Preview"
                 className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'flex';
-                }}
+                onError={() => setImagePreviewError(true)}
+                onLoad={() => setImagePreviewError(false)}
               />
-              <div className="absolute inset-0 hidden items-center justify-center bg-gray-600">
-                <span className="text-gray-400">Failed to load image</span>
-              </div>
+              {imagePreviewError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-600">
+                  <span className="text-gray-400">Failed to load image</span>
+                </div>
+              )}
             </div>
           </div>
         )}
