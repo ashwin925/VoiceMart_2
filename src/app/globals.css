@@ -200,26 +200,6 @@ body {
 }
 
 /* ===== CYBERPUNK COMPONENTS ===== */
-.cyber-border {
-  position: relative;
-  border: 2px solid transparent;
-  background: linear-gradient(45deg, var(--neon-blue), var(--neon-purple), var(--neon-pink));
-  background-clip: padding-box;
-  border-radius: 12px;
-}
-
-.cyber-border::before {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  background: linear-gradient(45deg, var(--neon-blue), var(--neon-purple), var(--neon-pink));
-  border-radius: 14px;
-  z-index: -1;
-  animation: glow 3s ease-in-out infinite;
-}
 
 .neon-text {
   animation: neonPulse 2s ease-in-out infinite;
@@ -426,4 +406,28 @@ body {
     padding-left: 2rem;
     padding-right: 2rem;
   }
+}
+
+/*---------------------------*/
+.mart{
+  background-image: linear-gradient(to bottom, black , cyan, cyan, black);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  /* For older versions of WebKit browsers */
+  -webkit-text-fill-color: transparent;
+
+}
+
+.para1{
+  margin-top: 30px;
+}
+.para2{
+  margin-bottom: 30px;
+}
+
+.cyber-border {
+  border: 2px solid cyan;
+  color: cyan;
+  border-radius: 12px;
 }

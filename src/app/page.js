@@ -260,19 +260,20 @@ export default function Home() {
           </div>
 
           <div className="max-w-7xl mx-auto container-padding text-center relative z-10">
-            <h1 className="text-6xl md:text-8xl font-black text-white margin-bottom animate-slideInTop">
-              <span className="gradient-text animate-neonPulse">VOICE</span>
-              <span className="text-white">MART</span>
+            <h1 className="text-6xl md:text-7xl font-black text-white margin-bottom animate-slideInTop">
+              <span className="bg-gradient-to-t from-blue-900 via-black to-blue-900 mart">VOICE </span>
+              <span className="bg-gradient-to-t from-blue-900 via-black to-blue-900 mart">  MART</span>
             </h1>
-            <p className="text-xl md:text-2xl text-cyan-300 margin-bottom-lg max-w-3xl mx-auto animate-slideInBottom">
-              🎯 THE FUTURE OF <span className="neon-text">VOICE-CONTROLLED</span> SHOPPING IS HERE
+            <p className="text-xl md:text-2xl bg-gradient-to-b from-blue-950 via-cyan-300 to-blue-950 bg-clip-text text-transparent margin-bottom-lg max-w-3xl mx-auto para1">
+               THE FUTURE OF VOICE-CONTROLLED SHOPPING IS HERE
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-slideInBottom">
+            <p className="text-xl md:text-2xl bg-gradient-to-b from-blue-950 via-cyan-300 to-blue-950 bg-clip-text text-transparent max-w-3xl mx-auto para2"> DESCRIBE THE SEAMLESS AND HANDS-FREE SHOPPING EXPERIRNCE!</p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <button className="cyber-border button-padding text-white font-bold text-lg transition-all duration-300 transform hover:scale-110">
-                🚀 START SHOPPING
+                 START SHOPPING
               </button>
-              <button className="glass button-padding text-cyan-300 font-bold text-lg transition-all duration-300 transform hover:scale-105">
-                🎙️ VOICE COMMANDS
+              <button className="cyber-border button-padding text-cyan-300 font-bold text-lg transition-all duration-300 transform hover:scale-105">
+                VOICE COMMANDS
               </button>
             </div>
           </div>
