@@ -74,6 +74,21 @@ export const categoriesAPI = {
       method: 'POST',
       body: categoryData,
     }),
+  // Get single category by id
+  getById: (id) => apiRequest(`/categories/${id}`),
+
+  // Update category
+  update: (id, categoryData) =>
+    apiRequest(`/categories/${id}`, {
+      method: 'PUT',
+      body: categoryData,
+    }),
+
+  // Delete category
+  delete: (id) =>
+    apiRequest(`/categories/${id}`, {
+      method: 'DELETE',
+    }),
 };
 
 // Cart API

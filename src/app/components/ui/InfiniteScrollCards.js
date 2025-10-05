@@ -57,8 +57,8 @@ export default function InfiniteScrollCards({ category, products, onProductClick
           className="flex space-x-6 overflow-x-hidden py-4"
           style={{ scrollBehavior: 'auto' }}
         >
-          {/* Double the products for seamless loop */}
-          {[...products, ...products].map((product, index) => (
+          {/* Render products once. Doubling caused visual duplicates when product lists were small */}
+          {products.map((product, index) => (
             <div
               key={`${product._id || product.id}-${index}`}
               className="flex-shrink-0 w-64"

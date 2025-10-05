@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 export const useVoiceCommands = () => {
   const [isListening, setIsListening] = useState(false);
@@ -24,14 +24,14 @@ export const useVoiceCommands = () => {
   }, [isActive, isListening]);
 
   // Enhanced voice commands configuration
-  const commands = {
+  const commands = useMemo(() => ({
     activation: ['listen now', 'start listening', 'wake up', 'hey voicemart', 'activate', 'hello voicemart'],
     deactivation: ['stop listening', 'sleep', 'go to sleep', 'stop', 'deactivate', 'goodbye'],
     navigation: ['scroll up', 'scroll down', 'scroll to top', 'scroll to bottom', 'go up', 'go down'],
     actions: ['add to cart', 'buy now', 'exit', 'close', 'go back', 'back'],
     selection: ['select', 'choose', 'focus on', 'show me', 'open'],
     help: ['help', 'what can i say', 'commands', 'show commands'],
-  };
+  }), []);
 
   // Request microphone permission
   const requestMicrophonePermission = useCallback(async () => {
@@ -54,14 +54,18 @@ export const useVoiceCommands = () => {
   }, []);
 
   // Check if command matches any in the list
-  const matchesCommand = (command, commandList) => {
+  const matchesCommand = useCallback((command, commandList) => {
+    if (!command) return false;
+    const normalized = command.toLowerCase().trim();
     return commandList.some(cmd => {
+      const token = cmd.toLowerCase();
       if (commandList === commands.selection) {
-        return command.startsWith(cmd + ' ');
+        // selection should be a prefix like "select headphones"
+        return normalized === token || normalized.startsWith(token + ' ');
       }
-      return command.includes(cmd);
+      return normalized.includes(token);
     });
-  };
+  }, [commands]);
 
   // Text-to-speech feedback
   const speakFeedback = useCallback((text) => {
@@ -213,7 +217,7 @@ export const useVoiceCommands = () => {
     }, 2000);
     
     setStatus('listening');
-  }, [speakFeedback, handleProductSelection, handleAddToCart, handleBuyNow, handleExit, transcript]);
+  }, [speakFeedback, handleProductSelection, handleAddToCart, handleBuyNow, handleExit, transcript, matchesCommand, commands]);
 
   // Initialize speech recognition
   const initializeRecognition = useCallback(() => {
@@ -253,7 +257,12 @@ export const useVoiceCommands = () => {
 
       // Display interim results for real-time feedback
       if (interimTranscript) {
-        setTranscript(interimTranscript.toLowerCase().trim());
+        // show interim but do not overwrite final already captured
+        setTranscript(prev => {
+          // prefer final if already set
+          if (finalTranscriptRef.current) return prev;
+          return interimTranscript.toLowerCase().trim();
+        });
       }
 
       // Process final results
@@ -262,7 +271,8 @@ export const useVoiceCommands = () => {
         finalTranscriptRef.current = finalText;
         setTranscript(finalText);
         console.log('🎯 Final transcript:', finalText);
-        processCommand(finalText);
+        // small debounce to avoid double-processing
+        setTimeout(() => processCommand(finalText), 50);
       }
     };
 
@@ -295,15 +305,18 @@ export const useVoiceCommands = () => {
 
     recognition.onend = () => {
       console.log('🔚 Speech recognition ended');
+      // If intentionally listening, try to restart but with a small backoff to avoid rapid restarts
       if (isListeningRef.current && permissionGranted) {
         setTimeout(() => {
           try {
             recognition.start();
-            console.log('🔄 Restarting speech recognition');
+            console.log('🔄 Restarting speech recognition (backoff)');
           } catch (error) {
             console.error('❌ Error restarting recognition:', error);
+            setStatus('error');
+            setIsListening(false);
           }
-        }, 100);
+        }, 300);
       } else {
         setStatus('inactive');
       }

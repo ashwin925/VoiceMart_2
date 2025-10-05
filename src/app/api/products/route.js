@@ -92,13 +92,18 @@ export async function POST(request) {
     }
 
     // Validate image URL format
-    try {
-      new URL(imageUrl);
-    } catch (urlError) {
-      return NextResponse.json(
-        { success: false, error: 'Please enter a valid image URL' },
-        { status: 400 }
-      );
+    // Allow absolute URLs, same-origin paths and data URIs. Use URL parsing for full URLs.
+    const isDataUri = typeof imageUrl === 'string' && imageUrl.startsWith('data:');
+    const isRelativeOrLocal = typeof imageUrl === 'string' && (imageUrl.startsWith('/') || imageUrl.startsWith('./'));
+    if (!isDataUri && !isRelativeOrLocal) {
+      try {
+        const parsed = new URL(imageUrl);
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+          return NextResponse.json({ success: false, error: 'Please enter a valid image URL' }, { status: 400 });
+        }
+      } catch (urlError) {
+        return NextResponse.json({ success: false, error: 'Please enter a valid image URL' }, { status: 400 });
+      }
     }
 
     // Validate description length

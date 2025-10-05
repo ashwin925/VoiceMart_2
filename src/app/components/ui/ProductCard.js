@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { useCartStore } from '../../../../store/cartStore';
 
 export default function ProductCard({ product, onProductClick, isFocused = false }) {
@@ -89,20 +90,54 @@ export default function ProductCard({ product, onProductClick, isFocused = false
           </div>
         )}
         
-        {/* Fixed Image Component with proper dimensions */}
+        {/* Optimized Image using next/image */}
         <div className="relative w-full h-full">
-          <img
-            src={imageError ? '/api/placeholder/400/300' : product.imageUrl}
-            alt={product.name}
-            fill
-            className={`object-cover transition-transform duration-700 ${
-              isHovered ? 'scale-110' : 'scale-100'
-            } ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
-            onError={handleImageError}
-            onLoad={handleImageLoad}
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-            priority={false}
-          />
+          {
+            // Use next/image for local or same-origin images to get optimization.
+            // For external hosts (not configured in next.config.js) fall back to a plain <img>.
+          }
+          {(() => {
+            const src = imageError ? 'https://via.placeholder.com/400x300?text=No+Image' : (product.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image');
+
+            let isExternal = false;
+            try {
+              const url = new URL(src, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+              // Treat as external when hostname differs from current origin and protocol is http(s)
+              if ((url.protocol === 'http:' || url.protocol === 'https:') && typeof window !== 'undefined') {
+                isExternal = url.hostname !== window.location.hostname;
+              }
+            } catch (e) {
+              // If URL parsing fails, treat as local
+              isExternal = false;
+            }
+
+            if (!isExternal) {
+              return (
+                <Image
+                  src={src}
+                  alt={product.name}
+                  fill
+                  className={`object-cover transition-transform duration-700 ${isHovered ? 'scale-110' : 'scale-100'} ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
+                  onError={handleImageError}
+                  onLoad={handleImageLoad}
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                />
+              );
+            }
+
+            // Fallback for external images (avoids next/image host config errors)
+            return (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={src}
+                alt={product.name}
+                className={`object-cover transition-transform duration-700 ${isHovered ? 'scale-110' : 'scale-100'} ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
+                onError={handleImageError}
+                onLoad={handleImageLoad}
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+              />
+            );
+          })()}
         </div>
         
         {/* Discount Badge */}
