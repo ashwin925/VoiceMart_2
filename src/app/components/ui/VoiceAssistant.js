@@ -208,44 +208,8 @@ export default function VoiceAssistant() {
         </div>
       </div>
 
-      {!permissionGranted && status === 'inactive' && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 container-padding backdrop-blur-sm">
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl modal-padding max-w-md shadow-2xl animate-scaleIn">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center mx-auto margin-bottom">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                </svg>
-              </div>
-              
-              <h3 className="text-2xl font-bold text-white margin-bottom-sm">Enable Voice Control</h3>
-              <p className="text-gray-300 margin-bottom-lg">
-                VoiceMart needs microphone access to provide hands-free shopping experience. 
-                You&apos;`ll need to say &quot;listen now&quot; to activate voice commands.
-              </p>
-              
-              <div className="flex space-x margin-bottom">
-                <button
-                  onClick={requestMicrophonePermission}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white button-padding rounded-lg font-semibold transition-all duration-300 transform hover:scale-105"
-                >
-                  Allow Microphone
-                </button>
-                <button
-                  onClick={() => {}}
-                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white button-padding rounded-lg font-semibold transition-colors"
-                >
-                  Maybe Later
-                </button>
-              </div>
-              
-              <p className="text-gray-400 text-sm">
-                You can always enable this later from the voice control button.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Microphone permission overlay removed to avoid forced prompts & flicker.
+          Users can grant permission via the Voice button or browser site settings. */}
     </>
   );
 }

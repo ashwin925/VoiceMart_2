@@ -1,11 +1,12 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Navbar from './components/ui/Navbar';
 import Footer from './components/ui/Footer';
 import InfiniteScrollCards from './components/ui/InfiniteScrollCards';
 import ProductModal from './components/ui/ProductModal';
 import VoiceAssistant from './components/ui/VoiceAssistant';
 import { categoriesAPI, productsAPI } from '@/lib/api';
+import { useCartStore } from '../../store/cartStore';
 
 export default function Home() {
   const [categories, setCategories] = useState([]);
@@ -16,15 +17,25 @@ export default function Home() {
   const [focusedProduct, setFocusedProduct] = useState(null);
   
   const productRefs = useRef(new Map());
+  const addToCart = useCartStore(state => state.addItem);
 
-  useEffect(() => {
-    fetchData();
-    setupVoiceEventListeners();
-
-    return () => {
-      cleanupVoiceEventListeners();
-    };
+  // Speak feedback wrapper used by voice handlers in this file
+  const speakVoiceFeedback = useCallback((text) => {
+    if (typeof window === 'undefined') return;
+    if ('speechSynthesis' in window) {
+      try {
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.rate = 0.95;
+        u.volume = 0.9;
+        speechSynthesis.speak(u);
+      } catch (e) {
+        console.warn('TTS failed:', e);
+      }
+    }
   }, []);
+
+  
 
   const fetchData = async () => {
     try {
@@ -78,74 +89,141 @@ export default function Home() {
     window.removeEventListener('voiceExit', handleVoiceExit);
   };
 
-  const handleVoiceSelectProduct = (event) => {
-    const productName = event.detail.productName.toLowerCase();
-    console.log('🎯 Voice selecting product:', productName);
-    
-    // Find product across all categories
-    let foundProduct = null;
+  const handleVoiceSelectProduct = useCallback((event) => {
+    const rawName = (event?.detail?.productName || '').toLowerCase().trim();
+    if (!rawName) return;
+    console.log('🎯 Voice selecting product:', rawName);
+
+    // Normalize tokens for fuzzy-ish matching
+    const normalize = (s) => s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+    const query = normalize(rawName);
+    const tokens = query.split(' ').filter(Boolean);
+
+    // Helper to score a product name; higher is better
+    const scoreProduct = (p) => {
+      const name = normalize(p.name);
+      // exact include is best
+      if (name === query) return 100;
+      if (name.includes(query)) return 90;
+      // token match count
+      let matchCount = 0;
+      for (const t of tokens) if (name.includes(t)) matchCount++;
+      return Math.floor((matchCount / Math.max(tokens.length, 1)) * 80);
+    };
+
+    // Search across all products
+    let best = null;
+    let bestScore = 0;
     Object.values(products).forEach(categoryProducts => {
-      const product = categoryProducts.find(p => 
-        p.name.toLowerCase().includes(productName)
-      );
-      if (product) foundProduct = product;
+      categoryProducts.forEach(p => {
+        const s = scoreProduct(p);
+        if (s > bestScore) {
+          bestScore = s;
+          best = p;
+        }
+      });
     });
 
-    if (foundProduct) {
-      console.log('✅ Product found:', foundProduct.name);
-      setFocusedProduct(foundProduct._id);
-      
-      // Auto-click the product after a short delay
-      setTimeout(() => {
-        handleProductClick(foundProduct);
-      }, 1000);
+    // Require a minimal confidence
+    if (best && bestScore >= 30) {
+      console.log('✅ Voice selection matched:', best.name, 'score', bestScore);
+      setFocusedProduct(best._id);
+      // do not auto-open modal; allow actions to operate while focused
+      speakVoiceFeedback(`Focused on ${best.name}`);
     } else {
-      console.log('❌ Product not found:', productName);
+      console.log('❌ No good match found for:', rawName);
+      speakVoiceFeedback(`I couldn't find ${rawName}. Try saying the exact product name.`);
     }
-  };
+  }, [products, speakVoiceFeedback]);
 
-  const handleVoiceAddToCart = () => {
-    if (selectedProduct) {
-      console.log('🛒 Voice: Adding to cart:', selectedProduct.name);
-      // Add to cart logic here
-      alert(`🛒 Added "${selectedProduct.name}" to cart!`);
+  const handleVoiceAddToCart = useCallback(() => {
+    // Prefer modal-selected product, otherwise the focused product
+    const getProductById = (id) => {
+      if (!id) return null;
+      for (const arr of Object.values(products)) {
+        const p = arr.find(x => x._id === id);
+        if (p) return p;
+      }
+      return null;
+    };
+
+    const targetProduct = selectedProduct || getProductById(focusedProduct);
+    if (targetProduct) {
+      console.log('🛒 Voice: Adding to cart:', targetProduct.name);
+      addToCart(targetProduct);
+      speakVoiceFeedback(`Added ${targetProduct.name} to your cart`);
+      alert(`🛒 Added "${targetProduct.name}" to cart!`);
     } else {
-      console.log('❌ No product selected to add to cart');
+      console.log('❌ No product selected or focused to add to cart');
+      speakVoiceFeedback('Please select a product first by saying "select [product name]"');
       alert('🎯 Please select a product first by saying "select [product name]"');
     }
-  };
+  }, [selectedProduct, focusedProduct, products, addToCart, speakVoiceFeedback]);
 
-  const handleVoiceBuyNow = () => {
-    if (selectedProduct) {
-      console.log('💰 Voice: Buying now:', selectedProduct.name);
-      // Buy now logic here
-      alert(`⚡ Purchasing "${selectedProduct.name}"!`);
+  const handleVoiceBuyNow = useCallback(() => {
+    const getProductById = (id) => {
+      if (!id) return null;
+      for (const arr of Object.values(products)) {
+        const p = arr.find(x => x._id === id);
+        if (p) return p;
+      }
+      return null;
+    };
+
+    const targetProduct = selectedProduct || getProductById(focusedProduct);
+    if (targetProduct) {
+      console.log('💰 Voice: Buying now:', targetProduct.name);
+      addToCart(targetProduct);
+      speakVoiceFeedback(`Purchasing ${targetProduct.name}`);
+      alert(`⚡ Purchasing "${targetProduct.name}"!`);
     } else {
       console.log('❌ No product selected to buy');
+      speakVoiceFeedback('Please select a product first by saying "select [product name]"');
       alert('🎯 Please select a product first by saying "select [product name]"');
     }
-  };
+  }, [selectedProduct, focusedProduct, products, addToCart, speakVoiceFeedback]);
 
-  const handleVoiceExit = () => {
+  const closeModal = useCallback(() => {
+    console.log('❌ Closing modal');
+    setIsModalOpen(false);
+    setSelectedProduct(null);
+  }, []);
+
+  const handleVoiceExit = useCallback(() => {
     console.log('🚪 Voice: Exit command received');
     if (isModalOpen) {
       closeModal();
     } else {
       console.log('ℹ️ No modal open to close');
     }
-  };
+  }, [isModalOpen, closeModal]);
+
+  // Attach voice event listeners after handlers are defined
+  useEffect(() => {
+    window.addEventListener('voiceSelectProduct', handleVoiceSelectProduct);
+    window.addEventListener('voiceAddToCart', handleVoiceAddToCart);
+    window.addEventListener('voiceBuyNow', handleVoiceBuyNow);
+    window.addEventListener('voiceExit', handleVoiceExit);
+
+    return () => {
+      window.removeEventListener('voiceSelectProduct', handleVoiceSelectProduct);
+      window.removeEventListener('voiceAddToCart', handleVoiceAddToCart);
+      window.removeEventListener('voiceBuyNow', handleVoiceBuyNow);
+      window.removeEventListener('voiceExit', handleVoiceExit);
+    };
+  }, [handleVoiceSelectProduct, handleVoiceAddToCart, handleVoiceBuyNow, handleVoiceExit]);
+
+  // Fetch data once on mount. Keep this separate to avoid re-running
+  // when voice handler references change (which would cause fetch loops).
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const handleProductClick = (product) => {
     console.log('🖱️ Product clicked:', product.name);
     setSelectedProduct(product);
     setIsModalOpen(true);
     setFocusedProduct(null); // Reset focus when modal opens
-  };
-
-  const closeModal = () => {
-    console.log('❌ Closing modal');
-    setIsModalOpen(false);
-    setSelectedProduct(null);
   };
 
   // Get total product count

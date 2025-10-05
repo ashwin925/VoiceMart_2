@@ -373,17 +373,34 @@ export const useVoiceCommands = () => {
   useEffect(() => {
     recognitionRef.current = initializeRecognition();
 
-    if (typeof window !== 'undefined' && 'mediaDevices' in navigator) {
-      requestMicrophonePermission();
-    }
+    // Do NOT automatically prompt for microphone permission on mount - browsers
+    // will show a blocking prompt repeatedly. Instead, detect the permission
+    // state (if supported) and only request permission when the user explicitly
+    // asks (startListening / Allow Microphone button).
+    (async () => {
+      try {
+        if (typeof navigator !== 'undefined' && navigator.permissions && navigator.permissions.query) {
+          const status = await navigator.permissions.query({ name: 'microphone' });
+          setPermissionGranted(status.state === 'granted');
+          // keep permission state updated
+          status.onchange = () => setPermissionGranted(status.state === 'granted');
+        } else {
+          // Permissions API not available - do not auto-prompt
+          // leave permissionGranted as false and let user trigger request
+        }
+      } catch (e) {
+        // ignore failures - avoid prompting automatically
+        console.warn('Permission API check failed:', e);
+      }
+    })();
 
     return () => {
       if (recognitionRef.current) {
-        recognitionRef.current.stop();
+        try { recognitionRef.current.stop(); } catch (e) { /* noop */ }
       }
-      speechSynthesis.cancel();
+      try { speechSynthesis.cancel(); } catch (e) { /* noop */ }
     };
-  }, [initializeRecognition, requestMicrophonePermission]);
+  }, [initializeRecognition]);
 
   return {
     isListening,
