@@ -22,11 +22,23 @@ const productSchema = new mongoose.Schema({
     required: [true, 'Short description is required'],
     maxLength: [200, 'Short description cannot exceed 200 characters']
   },
+  mrp: {
+    type: Number,
+    required: [true, 'MRP is required'],
+    min: [0, 'MRP cannot be negative'],
+    max: [100000, 'MRP cannot exceed 100000']
+  },
+  discount: {
+    type: Number,
+    default: 0,
+    min: [0, 'Discount cannot be negative'],
+    max: [100, 'Discount cannot exceed 100%']
+  },
   price: {
     type: Number,
     required: [true, 'Price is required'],
     min: [0, 'Price cannot be negative'],
-    max: [10000, 'Price cannot exceed 10000']
+    max: [100000, 'Price cannot exceed 100000']
   },
   isActive: {
     type: Boolean,
@@ -44,6 +56,12 @@ const productSchema = new mongoose.Schema({
 
 productSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
+  
+  // Auto-calculate price if not provided
+  if (this.mrp && this.discount !== undefined && !this.price) {
+    this.price = this.mrp - (this.mrp * this.discount / 100);
+  }
+  
   next();
 });
 
