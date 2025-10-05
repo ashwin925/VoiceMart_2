@@ -1,6 +1,5 @@
 'use client';
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { useCartStore } from '../../../../store/cartStore';
 
 const FALLBACK_IMAGE = 'https://via.placeholder.com/600x400/374151/FFFFFF?text=Product+Image+Not+Found';
@@ -98,7 +97,7 @@ export default function ProductModal({ product, onClose }) {
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
                 </div>
               )}
-              <Image
+              <img
                 src={imageUrl}
                 alt={product.name}
                 fill

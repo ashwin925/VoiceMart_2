@@ -27,8 +27,9 @@ const nextConfig = {
         hostname: '**.loremflickr.com',
       }
     ],
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
-  // Remove experimental optimizeCss to fix critters error
 }
 
 module.exports = nextConfig

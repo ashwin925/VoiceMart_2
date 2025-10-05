@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import ProductForm from '../components/admin/ProductForm';
 import { categoriesAPI, productsAPI } from '@/lib/api';
 
@@ -167,7 +166,7 @@ export default function AdminDashboard() {
             ) : (
               recentProducts.map((product) => (
                 <div key={product._id} className="flex items-center space-x-3 p-3 bg-gray-700/30 rounded-lg hover:bg-gray-700/50 transition-colors">
-                  <Image
+                  <img
                     src={product.imageUrl}
                     alt={product.name}
                     className="w-12 h-12 rounded-lg object-cover"

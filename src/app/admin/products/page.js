@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from './nextImage'
 
 // Mock data for development
 const mockProducts = [
@@ -133,7 +132,7 @@ export default function ProductsPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="h-10 w-10 flex-shrink-0">
-                          <Image
+                          <img
                             className="h-10 w-10 rounded-lg object-cover"
                             src={product.imageUrl}
                             alt={product.name}

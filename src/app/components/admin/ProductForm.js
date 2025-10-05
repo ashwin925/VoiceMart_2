@@ -1,5 +1,4 @@
 'use client';
-import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { categoriesAPI, productsAPI } from '@/lib/api';
 
@@ -296,7 +295,7 @@ export default function ProductForm({
           <div>
             <p className="text-sm text-gray-400 margin-bottom-sm">Image Preview:</p>
             <div className="relative h-48 bg-gray-700 rounded-lg overflow-hidden border border-gray-600">
-              <Image
+              <img
                 src={imagePreview || formData.imageUrl}
                 alt="Preview"
                 className="w-full h-full object-cover"

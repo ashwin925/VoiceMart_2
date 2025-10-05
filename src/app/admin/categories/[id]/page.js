@@ -2,8 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
-import ProductForm from '@/components/admin/ProductForm';
+import ProductForm from '../../../components/admin/ProductForm';
 import { categoriesAPI, productsAPI } from '@/lib/api';
 
 export default function CategoryProductsPage() {
@@ -114,7 +113,7 @@ export default function CategoryProductsPage() {
         {products.map((product) => (
           <div key={product._id} className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl card-padding border border-gray-700/50 hover-lift group">
             <div className="relative h-48 bg-gray-700 rounded-lg overflow-hidden margin-bottom">
-              <Image
+              <img
                 src={product.imageUrl}
                 alt={product.name}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

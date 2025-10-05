@@ -1,7 +1,6 @@
 'use client';
 import { useCartStore } from '../../../store/cartStore';
 import Link from 'next/link';
-import Image from 'next/image';
 import Navbar from '../components/ui/Navbar';
 import Footer from '../components/ui/Footer';
 
@@ -76,7 +75,7 @@ export default function CartPage() {
                     {/* Product Image */}
                     <div className="flex-shrink-0">
                       <div className="relative h-20 w-20 bg-gray-700 rounded-lg overflow-hidden">
-                        <Image
+                        <img
                           src={item.product.imageUrl}
                           alt={item.product.name}
                           fill

@@ -30,87 +30,34 @@ export default function Home() {
     try {
       setLoading(true);
       
-      // Fetch categories
-      const categoriesResponse = await categoriesAPI.getAll();
+      // Fetch only active categories and products
+      const [categoriesResponse, productsResponse] = await Promise.all([
+        categoriesAPI.getAll(),
+        productsAPI.getAll()
+      ]);
+
       const categoriesData = categoriesResponse.data || [];
+      const productsData = productsResponse.data || [];
+
       setCategories(categoriesData);
 
-      // Fetch products for each category
+      // Group ACTIVE products by category (only show products you've created)
       const productsByCategory = {};
-      for (const category of categoriesData) {
-        try {
-          const productsResponse = await productsAPI.getAll(category._id);
-          productsByCategory[category._id] = productsResponse.data || [];
-        } catch (error) {
-          console.error(`Error fetching products for category ${category.name}:`, error);
-          productsByCategory[category._id] = [];
+      categoriesData.forEach(category => {
+        const categoryProducts = productsData.filter(product => 
+          (product.category?._id === category._id || product.category === category._id) && 
+          product.isActive !== false
+        );
+        
+        if (categoryProducts.length > 0) {
+          productsByCategory[category._id] = categoryProducts;
         }
-      }
+      });
       
       setProducts(productsByCategory);
     } catch (error) {
       console.error('Error fetching data:', error);
-      // Fallback to mock data
-      setCategories([
-        {
-          _id: '1',
-          name: 'Electronics',
-          description: 'Latest gadgets and electronics'
-        },
-        {
-          _id: '2',
-          name: 'Fashion',
-          description: 'Trendy clothing and accessories'
-        }
-      ]);
-      setProducts({
-        '1': [
-          {
-            _id: '1',
-            name: 'Wireless Bluetooth Headphones',
-            imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=300&fit=crop',
-            shortDescription: 'High-quality wireless headphones with noise cancellation',
-            price: 99.99
-          },
-          {
-            _id: '2',
-            name: 'Smart Watch',
-            imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=300&fit=crop',
-            shortDescription: 'Feature-rich smartwatch with health monitoring',
-            price: 199.99
-          },
-          {
-            _id: '3',
-            name: 'Laptop Stand',
-            imageUrl: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400&h=300&fit=crop',
-            shortDescription: 'Adjustable aluminum laptop stand for better ergonomics',
-            price: 49.99
-          }
-        ],
-        '2': [
-          {
-            _id: '4',
-            name: 'Casual T-Shirt',
-            imageUrl: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=300&fit=crop',
-            shortDescription: 'Comfortable cotton t-shirt for everyday wear',
-            price: 24.99
-          },
-          {
-            _id: '5',
-            name: 'Running Shoes',
-            imageUrl: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=300&fit=crop',
-            shortDescription: 'Lightweight running shoes with great cushioning',
-            price: 89.99
-          },
-          {
-            _id: '6',
-            name: 'Designer Jeans',
-            imageUrl: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=300&fit=crop',
-            shortDescription: 'Premium quality jeans with perfect fit',
-            price: 79.99
-          }
-        ]
-      });
+      // No fallback to mock data - only show what's in database
     } finally {
       setLoading(false);
     }
@@ -161,10 +108,10 @@ export default function Home() {
     if (selectedProduct) {
       console.log('🛒 Voice: Adding to cart:', selectedProduct.name);
       // Add to cart logic here
-      alert(`Added "${selectedProduct.name}" to cart!`);
+      alert(`🛒 Added "${selectedProduct.name}" to cart!`);
     } else {
       console.log('❌ No product selected to add to cart');
-      alert('Please select a product first by saying "select [product name]"');
+      alert('🎯 Please select a product first by saying "select [product name]"');
     }
   };
 
@@ -172,10 +119,10 @@ export default function Home() {
     if (selectedProduct) {
       console.log('💰 Voice: Buying now:', selectedProduct.name);
       // Buy now logic here
-      alert(`Purchasing "${selectedProduct.name}"!`);
+      alert(`⚡ Purchasing "${selectedProduct.name}"!`);
     } else {
       console.log('❌ No product selected to buy');
-      alert('Please select a product first by saying "select [product name]"');
+      alert('🎯 Please select a product first by saying "select [product name]"');
     }
   };
 
@@ -201,12 +148,20 @@ export default function Home() {
     setSelectedProduct(null);
   };
 
+  // Get total product count
+  const totalProducts = Object.values(products).reduce((total, categoryProducts) => 
+    total + categoryProducts.length, 0
+  );
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex flex-col">
+      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-blue-900 flex flex-col">
         <Navbar />
         <div className="flex-grow flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-cyan-400 mx-auto margin-bottom"></div>
+            <p className="text-cyan-300 animate-pulse">🌀 Loading Cyber Store...</p>
+          </div>
         </div>
         <Footer />
       </div>
@@ -214,91 +169,118 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-blue-900 flex flex-col matrix-bg">
       <Navbar />
       
       <main className="flex-grow">
         {/* Hero Section */}
-        <section className="bg-gradient-to-br from-gray-800 to-gray-900 section-padding">
-          <div className="max-w-7xl mx-auto container-padding text-center">
-            <h1 className="text-5xl md:text-6xl font-bold text-white margin-bottom">
-              Welcome to <span className="text-blue-400">VoiceMart</span>
+        <section className="section-padding relative overflow-hidden">
+          {/* Animated Background Elements */}
+          <div className="absolute inset-0">
+            <div className="absolute top-10 left-10 w-20 h-20 bg-cyan-500/10 rounded-full blur-xl animate-float"></div>
+            <div className="absolute top-32 right-20 w-16 h-16 bg-purple-500/10 rounded-full blur-xl animate-float" style={{ animationDelay: '2s' }}></div>
+            <div className="absolute bottom-20 left-1/4 w-24 h-24 bg-pink-500/10 rounded-full blur-xl animate-float" style={{ animationDelay: '4s' }}></div>
+          </div>
+
+          <div className="max-w-7xl mx-auto container-padding text-center relative z-10">
+            <h1 className="text-6xl md:text-8xl font-black text-white margin-bottom animate-slideInTop">
+              <span className="gradient-text animate-neonPulse">VOICE</span>
+              <span className="text-white">MART</span>
             </h1>
-            <p className="text-xl text-gray-300 margin-bottom-lg max-w-3xl mx-auto">
-              Experience the future of accessible shopping. Control everything with your voice - 
-              from browsing products to making purchases.
+            <p className="text-xl md:text-2xl text-cyan-300 margin-bottom-lg max-w-3xl mx-auto animate-slideInBottom">
+              🎯 THE FUTURE OF <span className="neon-text">VOICE-CONTROLLED</span> SHOPPING IS HERE
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <button className="bg-blue-600 hover:bg-blue-700 text-white button-padding rounded-lg font-semibold transition-colors">
-                Start Shopping
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-slideInBottom">
+              <button className="cyber-border button-padding text-white font-bold text-lg transition-all duration-300 transform hover:scale-110">
+                🚀 START SHOPPING
               </button>
-              <button className="border border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-white button-padding rounded-lg font-semibold transition-colors">
-                Learn Voice Commands
+              <button className="glass button-padding text-cyan-300 font-bold text-lg transition-all duration-300 transform hover:scale-105">
+                🎙️ VOICE COMMANDS
               </button>
             </div>
           </div>
         </section>
 
         {/* Featured Categories Section */}
-        <section className="section-padding">
-          <div className="max-w-7xl mx-auto container-padding">
-            <div className="text-center margin-bottom-lg">
-              <h2 className="text-4xl font-bold text-white margin-bottom-sm">
-                Featured Categories
-              </h2>
-              <p className="text-gray-400 text-lg">
-                Browse our wide range of products with voice-enabled navigation
-              </p>
-            </div>
-
-            {/* Infinite Scroll Sections */}
-            {categories.map(category => (
-              <InfiniteScrollCards
-                key={category._id}
-                category={category}
-                products={products[category._id] || []}
-                onProductClick={handleProductClick}
-                focusedProduct={focusedProduct}
-              />
-            ))}
-
-            {categories.length === 0 && (
-              <div className="text-center section-padding-sm">
-                <p className="text-gray-400 text-lg">No categories found.</p>
+        {totalProducts > 0 ? (
+          <section className="section-padding">
+            <div className="max-w-7xl mx-auto container-padding">
+              <div className="text-center margin-bottom-lg">
+                <h2 className="text-5xl font-black text-white margin-bottom-sm animate-slideInTop">
+                  <span className="gradient-text">CYBER</span> PRODUCTS
+                </h2>
+                <p className="text-cyan-300 text-lg animate-slideInBottom">
+                  {totalProducts} FUTURISTIC ITEMS READY FOR VOICE CONTROL
+                </p>
               </div>
-            )}
-          </div>
-        </section>
+
+              {/* Infinite Scroll Sections - Only show categories with products */}
+              {categories.map(category => (
+                products[category._id] && products[category._id].length > 0 && (
+                  <InfiniteScrollCards
+                    key={category._id}
+                    category={category}
+                    products={products[category._id]}
+                    onProductClick={handleProductClick}
+                    focusedProduct={focusedProduct}
+                  />
+                )
+              ))}
+
+              {Object.keys(products).length === 0 && (
+                <div className="text-center section-padding-sm">
+                  <div className="text-6xl mb-4">🤖</div>
+                  <h3 className="text-2xl font-bold text-white margin-bottom-sm">NO PRODUCTS YET</h3>
+                  <p className="text-cyan-300">Create your first product in the admin panel!</p>
+                </div>
+              )}
+            </div>
+          </section>
+        ) : (
+          /* Empty State - No Products */
+          <section className="section-padding">
+            <div className="max-w-4xl mx-auto container-padding text-center">
+              <div className="hologram-card rounded-3xl card-padding border border-cyan-500/30">
+                <div className="text-8xl mb-6">🛸</div>
+                <h2 className="text-4xl font-black text-white margin-bottom-sm neon-text">
+                  STORE EMPTY
+                </h2>
+                <p className="text-cyan-300 text-lg margin-bottom-lg">
+                  No products available yet. Admin needs to add some futuristic items!
+                </p>
+                <div className="flex justify-center space-x-4">
+                  <button className="cyber-border button-padding text-white font-bold">
+                    🔮 COMING SOON
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Voice Command CTA */}
-        <section className="bg-gray-800 section-padding">
+        <section className="section-padding bg-gradient-to-r from-black/50 to-cyan-900/20">
           <div className="max-w-4xl mx-auto container-padding text-center">
-            <h2 className="text-3xl font-bold text-white margin-bottom-sm">
-              Ready to Shop Hands-Free?
+            <h2 className="text-4xl font-black text-white margin-bottom-sm">
+              READY FOR <span className="gradient-text">VOICE CONTROL</span>?
             </h2>
-            <p className="text-gray-300 margin-bottom-lg">
-              Click the microphone icon in the bottom right and say &quot;listen now&quot; to activate voice commands.
+            <p className="text-cyan-300 margin-bottom-lg text-lg">
+              Click the cyber orb below and say &quot;ACTIVATE&quot; to begin voice shopping
             </p>
-            <div className="bg-gray-700 rounded-lg card-padding max-w-2xl mx-auto">
-              <h3 className="text-white font-semibold margin-bottom">Try These Commands:</h3>
+            <div className="hologram-card rounded-2xl card-padding max-w-2xl mx-auto border border-purple-500/30">
+              <h3 className="text-white font-bold margin-bottom text-xl">VOICE COMMANDS:</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div className="text-gray-300">
-                  <span className="text-blue-400">&quot;listen now&quot;</span> - Activate voice control
+                <div className="text-cyan-300 cyber-border p-3 rounded-lg">
+                  <span className="font-bold">&quot;ACTIVATE&quot;</span> - Enable voice control
                 </div>
-                <div className="text-gray-300">
-                  <span className="text-blue-400">&quot;scroll down&quot;</span> - Scroll down the page
+                <div className="text-cyan-300 cyber-border p-3 rounded-lg">
+                  <span className="font-bold">&quot;SCROLL DOWN&quot;</span> - Navigate page
                 </div>
-                <div className="text-gray-300">
-                  <span className="text-blue-400">&quot;select headphones&quot;</span> - Focus on a product
+                <div className="text-cyan-300 cyber-border p-3 rounded-lg">
+                  <span className="font-bold">&quot;SELECT [PRODUCT]&quot;</span> - Choose item
                 </div>
-                <div className="text-gray-300">
-                  <span className="text-blue-400">&quot;add to cart&quot;</span> - Add focused item to cart
-                </div>
-                <div className="text-gray-300">
-                  <span className="text-blue-400">&quot;buy now&quot;</span> - Purchase focused item
-                </div>
-                <div className="text-gray-300">
-                  <span className="text-blue-400">&quot;stop listening&quot;</span> - Pause voice commands
+                <div className="text-cyan-300 cyber-border p-3 rounded-lg">
+                  <span className="font-bold">&quot;ADD TO CART&quot;</span> - Add to basket
                 </div>
               </div>
             </div>
