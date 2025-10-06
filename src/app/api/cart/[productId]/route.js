@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/mongoose';
-import Cart from '@/models/Cart';
+import Cart from '../../../models/Cart';
 
 // REMOVE item from cart
 export async function DELETE(request, { params }) {

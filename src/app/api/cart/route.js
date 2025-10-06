@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/mongoose';
-import Cart from '@/models/Cart';
-import Product from '@/models/Product';
+import Cart from '../../models/Cart';
+import Product from '../../models/Product';
 
 // GET user cart
 export async function GET() {
