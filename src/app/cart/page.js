@@ -3,8 +3,11 @@ import { useCartStore } from '../../../store/cartStore';
 import Link from 'next/link';
 import Navbar from '../components/ui/Navbar';
 import Footer from '../components/ui/Footer';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function CartPage() {
+  const router = useRouter();
   const { 
     items, 
     removeItem, 
@@ -25,6 +28,24 @@ export default function CartPage() {
     alert('Proceeding to checkout!');
     // Checkout logic will be implemented later
   };
+
+  useEffect(() => {
+    const handleVoiceCommands = (event) => {
+      if (event.type === 'voiceContinueShopping') {
+        router.push('/');
+      } else if (event.type === 'voiceProceedToCheckout') {
+        handleCheckout();
+      }
+    };
+
+    window.addEventListener('voiceContinueShopping', handleVoiceCommands);
+    window.addEventListener('voiceProceedToCheckout', handleVoiceCommands);
+
+    return () => {
+      window.removeEventListener('voiceContinueShopping', handleVoiceCommands);
+      window.removeEventListener('voiceProceedToCheckout', handleVoiceCommands);
+    };
+  }, [router]);
 
   if (items.length === 0) {
     return (

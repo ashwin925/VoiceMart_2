@@ -2,16 +2,31 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCartStore } from '../../../../store/cartStore';
+import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { getTotalItems } = useCartStore();
   const [cartItemCount, setCartItemCount] = useState(0);
+  const router = useRouter();
 
   useEffect(() => {
     setCartItemCount(getTotalItems());
   }, [getTotalItems]);
+
+  useEffect(() => {
+    const handleVoiceOpenCart = () => {
+      console.log('voiceOpenCart event received');
+      router.push('/cart');
+    };
+
+    window.addEventListener('voiceOpenCart', handleVoiceOpenCart);
+
+    return () => {
+      window.removeEventListener('voiceOpenCart', handleVoiceOpenCart);
+    };
+  }, [router]);
 
   const handleSearch = (e) => {
     e.preventDefault();

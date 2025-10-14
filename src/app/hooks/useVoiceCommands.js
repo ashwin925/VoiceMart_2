@@ -29,7 +29,7 @@ export const useVoiceCommands = () => {
     activation: ['listen now', 'start listening', 'wake up', 'hey voicemart', 'activate', 'hello voicemart'],
     deactivation: ['stop listening', 'sleep', 'go to sleep', 'stop', 'deactivate', 'goodbye'],
     navigation: ['scroll up', 'scroll down', 'scroll to top', 'scroll to bottom', 'go up', 'go down'],
-  actions: ['add to cart', 'buy now', 'open cart', 'exit', 'close', 'go back', 'back'],
+  actions: ['add to cart', 'buy now', 'open cart', 'exit', 'close', 'go back', 'back', 'continue shopping', 'proceed to checkout'],
     selection: ['select', 'choose', 'focus on', 'show me', 'open'],
     help: ['help', 'what can i say', 'commands', 'show commands'],
   }), []);
@@ -116,6 +116,18 @@ export const useVoiceCommands = () => {
     speakFeedback('Closing current view');
   }, [speakFeedback]);
 
+  const handleContinueShopping = useCallback(() => {
+    const event = new CustomEvent('voiceContinueShopping');
+    window.dispatchEvent(event);
+    speakFeedback('Continuing shopping');
+  }, [speakFeedback]);
+
+  const handleProceedToCheckout = useCallback(() => {
+    const event = new CustomEvent('voiceProceedToCheckout');
+    window.dispatchEvent(event);
+    speakFeedback('Proceeding to checkout');
+  }, [speakFeedback]);
+
   // Process voice commands - FIXED WITH REFS
   const processCommand = useCallback((command) => {
     setStatus('processing');
@@ -182,14 +194,6 @@ export const useVoiceCommands = () => {
       return;
     }
 
-    // Selection commands
-    if (matchesCommand(command, commands.selection)) {
-      console.log('🎯 Selection command detected:', command);
-      const productName = command.replace(new RegExp(commands.selection.join('|') + '\\s+', 'i'), '');
-      handleProductSelection(productName);
-      return;
-    }
-
     // Action commands
     if (matchesCommand(command, commands.actions)) {
       console.log('⚡ Action command detected:', command);
@@ -208,7 +212,21 @@ export const useVoiceCommands = () => {
       } else if (command.includes('exit') || command.includes('close') || command.includes('go back') || command.includes('back')) {
         handleExit();
         console.log('🚪 Exit triggered');
+      } else if (command.includes('continue shopping')) {
+        handleContinueShopping();
+        console.log('Shopping continued');
+      } else if (command.includes('proceed to checkout')) {
+        handleProceedToCheckout();
+        console.log('Proceeding to checkout');
       }
+      return;
+    }
+
+    // Selection commands
+    if (matchesCommand(command, commands.selection)) {
+      console.log('🎯 Selection command detected:', command);
+      const productName = command.replace(new RegExp(commands.selection.join('|') + '\\s+', 'i'), '');
+      handleProductSelection(productName);
       return;
     }
 
@@ -224,7 +242,7 @@ export const useVoiceCommands = () => {
     }, 2000);
     
     setStatus('listening');
-  }, [speakFeedback, handleProductSelection, handleAddToCart, handleBuyNow, handleExit, transcript, matchesCommand, commands]);
+  }, [speakFeedback, handleProductSelection, handleAddToCart, handleBuyNow, handleExit, handleContinueShopping, handleProceedToCheckout, transcript, matchesCommand, commands]);
 
   // Initialize speech recognition
   const initializeRecognition = useCallback(() => {
